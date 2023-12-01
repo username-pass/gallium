@@ -2,6 +2,8 @@
 
   <head>
 
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet" />
+
     <style>
       html,
       body,
@@ -18,7 +20,17 @@
       /* theme styles */
       .blur-bg {
         background-image: linear-gradient(to right top, #403539CC, #453b41CC, #494248CC, #4e484fCC, #524f56CC);
-        backdrop-filter: blur(15px);
+        /* backdrop-filter: blur(15px); */
+      }
+
+      .blur-bg::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        z-index: -1;
       }
       
       .bg {
@@ -43,6 +55,11 @@
       #gallium-taskbar:hover {
         bottom: 0px;
         transition-duration: 0.5s;
+      }
+
+      #gallium-taskbar::before {
+        border-top-left-radius: 25px;
+        border-top-right-radius: 25px;
       }
 
       #gallium-taskbar * {
@@ -97,7 +114,14 @@
           'FILL'0,
           'wght'400,
           'GRAD'0,
-          'opsz'24
+          'opsz'24;
+        /* margin-left: 4px;
+        margin-top: 8px; */
+      }
+
+      /* remove old extension taskbar*/
+      div#eXelper-taskbar {
+        left: -100% !important;
       }
 
     </style>
@@ -254,6 +278,10 @@
         display: block;
       }
 
+      .search-menu::before {
+        border-radius: 20px;
+      }
+
       .search-menu.hidden {
         display: none;
         height: 0px;
@@ -301,10 +329,18 @@
         }
         
         #search-menu-bottom-row {
-            width: 100%;
+            width: calc(100% - 80px);
+            height: calc(100% - 60px);
             display: grid;
             justify-content: center;
             align-items: center;
+            align-content: center;
+            justify-items: center;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 10px;
+            padding-left: 40px;
+            padding-right: 40px;
         }
 
     </style>
@@ -318,7 +354,26 @@
         border: none;
       }
 
-        
+       .app-launcher {
+          width: 100%;
+          height: 100%;
+       }
+
+      .app-icon {
+        width: 40px;
+        height: 40px;
+        margin-left: 9px;
+        margin-top: 3px;
+      }
+      .app-icon:hover {
+        transform: scale(1.1);
+      }
+
+      span.app-icon {
+        font-size: 40px;
+        margin-left: 9px;
+        margin-top: 6px;
+      }
         
 
     </style>
@@ -447,13 +502,48 @@
         windowTemplates.default = document.getElementById("windowTemplateDefault");
         windowTemplates.RH = document.getElementById("windowTemplateRH");
         const windowsList = [];
+
+        const apps = {
+          default: {
+            comment: "default app",
+            description: "default app",
+            template: "default",
+            code: "content",
+            name: "default",
+            data: {
+              stuff: "more stuff"
+            },
+            icon: "https://example.com/iconurl.png",
+            materialIcon: "lens"
+          },
+          RH: {
+            comment: "change url regularly",
+            description: "rammerhead browser (prx)",
+            template: "RH",
+            code: document.getElementById("appRH").innerHTML,
+            name: "Rammerhead",
+            data: {
+              url: "https://bing.bizuit.com"
+            },
+            icon: "https://www.google.com/chrome/static/images/chrome-logo.svg"
+          },
+          settings: {
+            comment: "TODO: get clone",
+            description: "settings app",
+            template: "default",
+            code: document.getElementById("appSettings"),
+            name: "Settings",
+            data: {},
+            materialIcon: "settings"
+          },
+        }
         
         var topWindowZ = 1;
 
         function createElement(type, id, clss, append = false, parent = document.body) {
           newEl = document.createElement(type || "div");
           if (id) newEl.id = id;
-          if (clss) newEl.class = clss;
+          if (clss) newEl.className = clss;
           if (append) parent.appendChild(newEl);
           console.log(newEl.class);
           return newEl;
@@ -470,13 +560,50 @@
         //TODO
         //!!!!!!!!!!!!!!!!!!!!
         //=====================
-        const searchMenuBottomRow = document.querySelector("search-menu-bottom-row");
-        class WinTemplateLauncher {
-            constructor(name, template, icon) {
+        const searchMenuBottomRow = document.querySelector("#search-menu-bottom-row");
+        class appLauncher {
+            constructor(app) {
                 this.UUID = generateUUID();
-                this.launcher = createElement("div",this.UUID)
+                this.app = app;
+                
+                this.launcher = createElement("div",this.UUID+"-launcher", "app-launcher", true, searchMenuBottomRow);
+                
+                
+                
+                if (app.icon) {
+                  this.appIcon = createElement("img", this.UUID+"-icon", "app-icon", true, this.launcher);
+                  this.appIcon.src = app.icon;
+                  if (app.materialIcon) this.appIcon.style.display = "none";
+                }
+                if (app.materialIcon) {
+                  this.appImage = createElement("span", this.UUID+"-icon", (app.materialIcon != undefined ? "material-symbols-outlined ": " ") +"app-icon", true, this.launcher);
+                  
+                  this.appImage.innerHTML = app.materialIcon;
+                }
+                
+                this.init();
+            }
+            init() {
+              this.addEventListeners();
+            }
+            addEventListeners() {
+              this.launcher.addEventListener("click", () => this.launchApp());
+            }
+            launchApp() {
+              console.log(this.app);
+              new Window(" ", {
+                width: 400,
+                height: 300,
+                template: this.app.template
+              }, this.app.code, this.app.icon);
             }
         }
+        let appLaunchers = [];
+        Object.keys(apps).forEach((appName,i) => {
+          let app = apps[appName];
+          console.log(app);
+          appLaunchers.push(new appLauncher(app))
+        })
 
         //windows
         class Window {
@@ -485,7 +612,7 @@
             this.options = Object.assign({
               width: SETTINGS.WINDOW.DEFAULT.WIDTH.value,
               height: SETTINGS.WINDOW.DEFAULT.HEIGHT.value,
-              template: "RH"
+              template: "default"
             },options);
             this.content = content || "content";
             this.icon = icon || "https://www.google.com/chrome/static/images/chrome-logo.svg";
@@ -585,7 +712,7 @@
         currentWindowIndex = 0;
         document.body.addEventListener('keyup', function(event) {
           if (event.altKey && event.key === 'Tab') {
-            event.preventDefault(); // Prevent the default Alt+Tab behavior
+            // event.preventDefault(); // Prevent the default Alt+Tab behavior
 
             // Focus the current window
             windowsList[currentWindowIndex][1].focus();
@@ -598,7 +725,8 @@
           if (event.ctrlKey && event.key == "n") {
             new Window(" ", {
               width: 400,
-              height: 300
+              height: 300,
+              template: "RH"
             }, `<iframe src="https://bing.bizuit.com/" class="full-frame"></iframe>`, "").focus();
           }
         });
@@ -714,15 +842,16 @@
 
 
 
-        let testWin = [];
-        for (i = 0; i < 1; i++) {
-          testWin.push(new Window(" ", {
+          new Window(" ", {
             width: 400,
-            height: 300
+            height: 300,
+            template: "RH"
           }, `
   <iframe src="https://bing.bizuit.com/" class="full-frame"></iframe>
-  `, ""))
-        }
+  `, "")
+  
+  // new Window(" ", {width: 400,height: 300,}, `<iframe src="${prompt("url?","https://")}" class="full-frame"></iframe>`, "")
+        
       }
 
     </script>
@@ -792,7 +921,7 @@
       </div>
     </template>
 
-      <!-- rammerhead -->
+      <!-- rammerhead template -->
       <template id="windowTemplateRH">
       <div class="windowTitleBarRH titleBar">
         <titleText class="templateRH"></titleText>
@@ -812,31 +941,11 @@
       <div class="windowContentRH windowContent">
       </div>
     </template>
-    
-    <!-- Default -->
-    
-      <template id="windowTemplateSettings">
-      <div class="windowTitleBarDefault titleBar">
-        <titleText></titleText>
-        <span class="right">
-          <button class="titleBarButton titleBarMinimize">
-            —
-          </button>
-          <button class="titleBarButton titleBarMaximize">
-            □
-          </button>
-          <button class="titleBarButton titleBarClose">
-            ×
-          </button>
-        </span>
-      </div>
-      <div class="resizeHandle"></div>
-      <div class="windowContentDefault windowContent">
-          
-      </div>
-    </template>
 
-
+    <!-- apps-->
+    <template id="appRH"><iframe src="https://bing.bizuit.com/" class="full-frame"></iframe></template>
+    <template id="appRH"><iframe src="" class="full-frame"></iframe></template>
+    
     <!-- Taskbar (needs to be at the bottom) -->
     <div id="gallium-taskbar" class="blur-bg">
 
