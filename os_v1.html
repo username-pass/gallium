@@ -719,6 +719,13 @@
       bind.run = codeToRun;
       SETTINGS.KEYBINDS.BINDS.value.push(bind);
     }
+    
+    function getLocalVal(key, p) {
+      const val = prompt(p,localStorage.getItem(key));
+      localStorage.setItem(key,val);
+      return val;
+    }
+    
   </script>
   <script defer id="taskbar_scripts">
     function taskbar_scripts() {
@@ -1158,12 +1165,14 @@
 
 
 
+      
+
       new Window(" ", {
         width: 400,
         height: 300,
         template: "Browser"
       }, `
-  <iframe src="https://bing.bizuit.com/" class="full-frame"></iframe>
+  <iframe src="${getLocalVal("proxURL","Url for browser?")}" class="full-frame"></iframe>
   `, "")
 
       // new Window(" ", {width: 400,height: 300,}, `<iframe src="${prompt("url?","https://")}" class="full-frame"></iframe>`, "")
@@ -1429,6 +1438,8 @@
             </div>
           </div>
           <script defer>
+
+            
 
             function updateSettings() {
               Object.keys(SETTINGS).forEach(category => {
